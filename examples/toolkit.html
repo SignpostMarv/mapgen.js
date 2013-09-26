@@ -226,9 +226,23 @@ window.onload = function(){
 						})();
 						return false;
 					break;
+					case 'save':
+						var
+							 a = document.createElement('a')
+						;
+						if('download' in a){
+							a.setAttribute('download', 'mapgen-toolkit.png');
+							a.href = render.toDataURL('image/png');
+							a.click();
+						}
+					break;
 				}
 			break;
 		}
+	}
+
+	if(!('download' in document.createElement('a'))){
+		form.querySelector('#save').disabled = true;
 	}
 
 	var
@@ -321,6 +335,8 @@ fieldset:hover, fieldset:first-of-type{
 			<li><label for=renderHeight>Render Height: </label><input id=renderHeight type=range min=100 max=4096 value=512><output for=renderHeight>512</output></li>
 			<li><label for=failLimit title="Vary the effort taken to pack as many buildings onto the map">Fail Limit: </label><input id=failLimit type=range min=1 max=1000 value=4><output for=failLimit>4</output></li>
 		</ul>
+		<button type=reset>Reset</button>
+		<button id=save>Save</button>
 		<fieldset>
 			<legend>Randomisation</legend>
 			<ul>
@@ -360,7 +376,6 @@ fieldset:hover, fieldset:first-of-type{
 			</ul>
 		</fieldset>
 	</fieldset>
-	<button type=reset>Reset</button>
 	<section>
 		<h1>Error Log</h1>
 		<ol id=errorLog></ol>
