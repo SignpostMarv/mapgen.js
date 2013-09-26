@@ -52,7 +52,8 @@ window.onload = function(){
 		var
 			checkColor = [
 				'fill',
-				'line'
+				'line',
+				'road'
 			]
 		;
 		checkOpts.forEach(function(e){
@@ -142,6 +143,81 @@ window.onload = function(){
 		}
 	}
 
+	form.onclick = function(e){
+		switch(e.target.nodeName){
+			case 'BUTTON':
+				if(e.target.type != 'submit' && e.target.type != 'reset'){
+					e.preventDefault();
+				}
+				switch(e.target.id){
+					case 'randomColor' :
+						(function(){
+							function rand(){
+								var
+									val = '#'
+								;
+								for(var i=0;i<3;++i){
+									val += (function(){
+										var val = Math.floor(Math.random() * (0xff + 1));
+										return ((val < 0x10) ? '0' : '') + val.toString(16);
+									})();
+								}
+								return val;
+							}
+							var
+								colors = form.querySelectorAll('input[type="color"]')
+							;
+							if(form.querySelector('#roadOpacity').value <= 0){
+								form.querySelector('#roadOpacity').value = 1;
+								prefUpdate('roadOpacity');
+								updateOutput('roadOpacity');
+							}
+							for(var i=0;i<colors.length;++i){
+								colors[i].value = rand();
+								prefUpdate(colors[i].id);
+								updateOutput(colors[i].id);
+							}
+						})();
+						return false;
+					case 'randomPoly':
+					case 'randomLine':
+						var
+							props = {
+								'randomPoly' : ['polyWidth', 'polyWidthMul', 'polyHeight', 'polyHeightMul'],
+								'randomLine' : ['radius', 'lineWidth']
+							}
+						;
+						(function(){
+							function rand(id, min){
+								var
+									el = form.querySelector('#' + id),
+									val = (Math.random() * (el.max - el.min)) + el.min,
+									step = parseFloat(el.step)
+								;
+								val -= val % (isNaN(step) ? 1 : step);
+								el.value = val;
+							}
+							props[e.target.id].forEach(function(e){
+								rand(e);
+								updateOutput(e);
+							});
+							if(e.target.id == 'randomLine'){
+								form.querySelector('#lineWidth').value = Math.min(form.querySelector('#lineWidth').value, form.querySelector('#radius').value);
+								updateOutput('lineWidth');
+								prefUpdate('lineWidth');
+								prefUpdate('radius');
+							}
+							setTimeout(function(){
+								form.onsubmit(e);
+							}, 16);
+						})();
+						return false;
+					break;
+				}
+			break;
+		}
+	}
+
 	var
 		trigger = [77, 79, 82, 83, 69],
 		enable = 0,
@@ -202,9 +278,16 @@ form{
 		<ul>
 			<li><label for=renderWidth>Render Width: </label><input id=renderWidth type=range min=100 max=800 value=800><output for=renderWidth>800</output></li>
 			<li><label for=renderHeight>Render Height: </label><input id=renderHeight type=range min=100 max=800 value=800><output for=renderHeight>800</output></li>
-			<li><label for=roadWidth>Road Width: </label><input id=roadWidth type=range min=4 max=64 value=16><output for=roadWidth>16</output></li>
 			<li><label for=failLimit>Fail Limit: </label><input id=failLimit type=range min=1 max=1000 value=4><output for=failLimit>4</output></li>
 		</ul>
+		<fieldset>
+			<legend>Road</legend>
+			<ul>
+				<li><label for=roadWidth>Road Width: </label><input id=roadWidth type=range min=4 max=64 value=16><output for=roadWidth>16</output></li>
+				<li><label for=roadColor>road Color: </label><input id=roadColor type=color value="#ffffff"><output for=roadColor>#ffffff</output></li>
+				<li><label for=roadOpacity>road Opacity: </label><input id=roadOpacity type=range min=0 max=1 step=0.01 value=0><output for=roadOpacity>0</output></li>
+			</ul>
+		</fieldset>
 		<fieldset>
 			<legend>Line</legend>
 			<ul>
@@ -225,8 +308,17 @@ form{
 				<li><label for=fillOpacity>Fill Opacity: </label><input id=fillOpacity type=range min=0 max=1 step=0.01 value=1><output for=fillOpacity>1</output></li>
 			</ul>
 		</fieldset>
+		<fieldset>
+			<legend>Randomisation</legend>
+			<ul>
+				<li><button type=submit>Distribution</button></li>
+				<li><button id=randomAll>Randomise Everything</button></li>
+				<li><button id=randomColor>Randomise Colours</button></li>
+				<li><button id=randomPoly>Randomise Buildings</button></li>
+				<li><button id=randomLine>Randomise Lines</button></li>
+			</ul>
+		</fieldset>
 	</fieldset>
-	<button type=submit>Redraw</button>
 	<button type=reset>Reset</button>
 	<section>
 		<h1>Error Log</h1>

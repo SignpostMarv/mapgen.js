@@ -55,17 +55,25 @@
 	mapgen.prototype['options'] = function(newOpts){
 		var
 			cache = this.cache,
-			opts = this.opts
+			opts = this.opts,
+			roadR = rangeHasOwn(newOpts, opts,
+				'roadR', 0x00|0, 0xff|0, 0xff|0)|0,
+			roadG = rangeHasOwn(newOpts, opts,
+				'roadG', 0x00|0, 0xff|0, 0xff|0)|0,
+			roadB = rangeHasOwn(newOpts, opts,
+				'roadB', 0x00|0, 0xff|0, 0xff|0)|0,
+			roadA = +rangeHasOwn(newOpts, opts,
+				'roadA', +0    , +1    , +0    )
 		;
-		opts['renderWidth']  = rangeHasOwn(newOpts, opts,
+		opts['renderWidth']   = rangeHasOwn(newOpts, opts,
 			'renderWidth'  , 100|0 , 65536|0 , 400|0 )|0;
-		opts['renderHeight'] = rangeHasOwn(newOpts, opts,
+		opts['renderHeight']  = rangeHasOwn(newOpts, opts,
 			'renderHeight' , 100|0 , 65536|0 , 300|0 )|0;
-		opts['roadWidth']    = rangeHasOwn(newOpts, opts,
+		opts['roadWidth']     = rangeHasOwn(newOpts, opts,
 			'roadWidth'    , 4|0   , 128|0   , 16|0  )|0;
-		opts['polyWidth']    = rangeHasOwn(newOpts, opts,
+		opts['polyWidth']     = rangeHasOwn(newOpts, opts,
 			'polyWidth'    , 0x10|0, 0x1000|0, 0x40|0)|0;
-		opts['polyWidthMul'] = rangeHasOwn(newOpts, opts,
+		opts['polyWidthMul']  = rangeHasOwn(newOpts, opts,
 			'polyWidthMul' , 1|0   , 32|0    , 4|0   )|0;
 		opts['polyHeight']    = rangeHasOwn(newOpts, opts,
 			'polyHeight'    , 0x10|0, 0x1000|0, 0x80|0)|0;
@@ -89,6 +97,12 @@
 				opts[e] = newOpts[e]
 			}
 		});
+		cache.roadColor = 'rgba('
+			+ roadR.toString(10|0) + ','
+			+ roadG.toString(10|0) + ','
+			+ roadB.toString(10|0) + ','
+			+ roadA.toString(10|0) + ')'
+		;
 		if(cache['poly']){
 			for(var i in cache['poly']){
 				if(hasOwn(cache['poly'], i)){
@@ -155,7 +169,6 @@
 			failCount = 0,
 			block
 		;
-		ctx.translate(opts['roadWidth'] / +2, opts['roadWidth'] / +2);
 		if(!cache.blocks){
 			var
 				blocks = []
@@ -195,6 +208,10 @@
 			cache.blocks = blocks;
 		}
 		ctx.clearRect(0, 0, render.width, render.height);
+		ctx.fillStyle = cache.roadColor;
+		ctx.fillRect(0, 0, render.width, render.height);
+		ctx.save();
+		ctx.translate(opts['roadWidth'] / +2, opts['roadWidth'] / +2);
 		cache.blocks.forEach(function(e){
 			var
 				draw = polyCache[e.width][e.height].draw(true)
@@ -204,6 +221,7 @@
 				e.x, e.y
 			);
 		});
+		ctx.restore();
 
 		return render;
 	}
