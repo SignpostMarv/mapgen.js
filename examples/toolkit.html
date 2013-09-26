@@ -118,17 +118,27 @@ form{
 			<li><label for=renderWidth>Render Width: </label><input id=renderWidth type=range min=100 max=800 value=800><output for=renderWidth>800</output></li>
 			<li><label for=renderHeight>Render Height: </label><input id=renderHeight type=range min=100 max=800 value=800><output for=renderHeight>800</output></li>
 			<li><label for=roadWidth>Road Width: </label><input id=roadWidth type=range min=4 max=64 value=16><output for=roadWidth>16</output></li>
+		</ul>
+		<fieldset>
+			<legend>Line</legend>
+		<ul>
 			<li><label for=lineWidth>Line Width: </label><input id=lineWidth type=range min=4 max=64 value=4><output for=lineWidth>4</output></li>
 			<li><label for=lineColor>line Color: </label><input id=lineColor type=color value="#000000"><output for=lineColor>#000000</output></li>
 			<li><label for=lineOpacity>line Opacity: </label><input id=lineOpacity type=range min=0 max=1 step=0.01 value=1><output for=lineOpacity>1</output></li>
+			<li><label for=radius>Radius: </label><input id=radius type=range min=4 max=64 value=16><output for=radius>16</output></li>
+		</ul>
+		</fieldset>
+		<fieldset>
+			<legend>Buidling</legend>
+		<ul>
 			<li><label for=polyWidth>Building Width: </label><input id=polyWidth type=range min=4 max=128 step=4 value=64><output for=polyWidth>64</output></li>
 			<li><label for=polyWidthMul>Building Width randomiser: </label><input id=polyWidthMul type=range min=1 max=10 value=3><output for=polyWidthMul>3</output></li>
 			<li><label for=polyHeight>Building Height: </label><input id=polyHeight type=range min=4 max=128 step=4 value=64><output for=polyHeight>64</output></li>
 			<li><label for=polyHeightMul>Building Height randomiser: </label><input id=polyHeightMul type=range min=1 max=10 value=2><output for=polyHeightMul>2</output></li>
-			<li><label for=radius>Radius: </label><input id=radius type=range min=4 max=64 value=16><output for=radius>16</output></li>
 			<li><label for=fillColor>Fill Color: </label><input id=fillColor type=color value="#ffffff"><output for=fillColor>#ffffff</output></li>
 			<li><label for=fillOpacity>Fill Opacity: </label><input id=fillOpacity type=range min=0 max=1 step=0.01 value=1><output for=fillOpacity>1</output></li>
 		</ul>
+		</fieldset>
 	</fieldset>
 	<button type=submit>Redraw</button>
 </form>
