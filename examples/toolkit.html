@@ -10,8 +10,12 @@ window.onload = function(){
 	var
 		render = document.createElement('canvas'),
 		form = document.querySelector('form'),
+		req = (window.requestAnimationFrame != undefined) ? requestAnimationFrame : function(cb){
+			setTimeout(cb, 16);
+		},
 		gen,
-		ctx
+		ctx,
+		drawDelay
 	;
 	function logError(e){
 		var
@@ -20,17 +24,29 @@ window.onload = function(){
 		;
 		li.appendChild(document.createTextNode(e));
 		errorLog.insertBefore(li, errorLog.firstChild);
+		errorLog.style.counterReset = 'errors ' + (errorLog.childNodes.length + 1);
 	}
 	function doDraw(map, force){
-		var
-			draw = map.draw(force);
-		;
-		ctx.save();
-		ctx.fillStyle = '#eee';
-		ctx.fillRect(0, 0, render.width, render.height);
-		ctx.translate(400 + (draw.width / -2), 400 + (draw.height / -2));
-		ctx.drawImage(draw, 0, 0);
-		ctx.restore();
+		if(drawDelay){
+			clearTimeout(drawDelay);
+		}
+		drawDelay = setTimeout(function(){
+			try{
+				var
+					draw = map.draw(force);
+				;
+				render.width = draw.width;
+				render.height = draw.height;
+				ctx.save();
+				ctx.fillStyle = '#eee';
+				ctx.fillRect(0, 0, render.width, render.height);
+				ctx.translate((render.width / +2)+ (draw.width / -2), (render.height / +2) + (draw.height / -2));
+				ctx.drawImage(draw, 0, 0);
+				ctx.restore();
+			}catch(e){
+				logError(e);
+			}
+		}, 64);
 	}
 
 	function prefUpdate(pref){
@@ -96,8 +112,10 @@ window.onload = function(){
 			gen = new mapgen(opts);
 		}
 	}
+
 	prefUpdate();
-	render.width = render.height = 800;
+	render.width  = parseInt(form.querySelector('#renderWidth').max, 10);
+	render.height = parseInt(form.querySelector('#renderHeight').max, 10);
 	ctx = render.getContext('2d');
 	document.body.appendChild(render);
 	doDraw(gen);
@@ -107,11 +125,6 @@ window.onload = function(){
 		return false;
 	}
 	form.onreset = function(){
-		var
-			req = (window.requestAnimationFrame != undefined) ? requestAnimationFrame : function(cb){
-				setTimeout(cb, 16);
-			}
-		;
 		req(function(){
 			var
 				outputs = form.querySelectorAll('output')
@@ -262,11 +275,39 @@ window.onload = function(){
 }
 </script>
 <style>
+body{
+	padding: 0 ;
+	margin: 0 ;
+}
 canvas{
 	background: #fff ;
+	max-height: 99vh ;
+	max-width: 99vh ;
+	margin: 0 ;
 }
 form{
-	float: left ;
+	float: right ;
+}
+fieldset{
+	max-width: 5em ;
+	max-height: 0 ;
+	overflow: hidden ;
+	transition: max-height 2s, max-width 1s ;
+}
+fieldset:hover, fieldset:first-of-type{
+	max-height: 1000em ;
+	max-width: 20em ;
+}
+#errorLog{
+	counter-reset: errors 2 ;
+}
+#errorLog li{
+	list-style: none ;
+	list-position: inside ;
+}
+#errorLog li:before{
+	content : counter(errors) '. ' ;
+	counter-increment: errors -1 ;
 }
 </style>
 </head>
@@ -276,10 +317,20 @@ form{
 	<fieldset>
 		<legend>Toolkit</legend>
 		<ul>
-			<li><label for=renderWidth>Render Width: </label><input id=renderWidth type=range min=100 max=800 value=800><output for=renderWidth>800</output></li>
-			<li><label for=renderHeight>Render Height: </label><input id=renderHeight type=range min=100 max=800 value=800><output for=renderHeight>800</output></li>
+			<li><label for=renderWidth>Render Width: </label><input id=renderWidth type=range min=100 max=4096 value=1024><output for=renderWidth>1024</output></li>
+			<li><label for=renderHeight>Render Height: </label><input id=renderHeight type=range min=100 max=4096 value=512><output for=renderHeight>512</output></li>
 			<li><label for=failLimit title="Vary the effort taken to pack as many buildings onto the map">Fail Limit: </label><input id=failLimit type=range min=1 max=1000 value=4><output for=failLimit>4</output></li>
 		</ul>
+		<fieldset>
+			<legend>Randomisation</legend>
+			<ul>
+				<li><button type=submit>Distribution</button></li>
+				<li><button id=randomAll>Randomise Everything</button></li>
+				<li><button id=randomColor>Randomise Colours</button></li>
+				<li><button id=randomPoly>Randomise Buildings</button></li>
+				<li><button id=randomLine>Randomise Lines</button></li>
+			</ul>
+		</fieldset>
 		<fieldset>
 			<legend>Road</legend>
 			<ul>
@@ -306,16 +357,6 @@ form{
 				<li><label for=polyHeightMul>Building Height randomiser: </label><input id=polyHeightMul type=range min=1 max=10 value=2><output for=polyHeightMul>2</output></li>
 				<li><label for=fillColor>Fill Color: </label><input id=fillColor type=color value="#ffffff"><output for=fillColor>#ffffff</output></li>
 				<li><label for=fillOpacity>Fill Opacity: </label><input id=fillOpacity type=range min=0 max=1 step=0.01 value=1><output for=fillOpacity>1</output></li>
-			</ul>
-		</fieldset>
-		<fieldset>
-			<legend>Randomisation</legend>
-			<ul>
-				<li><button type=submit>Distribution</button></li>
-				<li><button id=randomAll>Randomise Everything</button></li>
-				<li><button id=randomColor>Randomise Colours</button></li>
-				<li><button id=randomPoly>Randomise Buildings</button></li>
-				<li><button id=randomLine>Randomise Lines</button></li>
 			</ul>
 		</fieldset>
 	</fieldset>
