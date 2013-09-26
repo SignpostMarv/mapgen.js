@@ -54,6 +54,7 @@
 	}
 	mapgen.prototype['options'] = function(newOpts){
 		var
+			cache = this.cache,
 			opts = this.opts
 		;
 		opts['renderWidth']  = rangeHasOwn(newOpts, opts,
@@ -67,9 +68,11 @@
 		opts['polyWidthMul'] = rangeHasOwn(newOpts, opts,
 			'polyWidthMul' , 1|0   , 32|0    , 4|0   )|0;
 		opts['polyHeight']    = rangeHasOwn(newOpts, opts,
-			'polyWidth'    , 0x10|0, 0x1000|0, 0x80|0)|0;
+			'polyHeight'    , 0x10|0, 0x1000|0, 0x80|0)|0;
 		opts['polyHeightMul'] = rangeHasOwn(newOpts, opts,
 			'polyHeightMul', 1|0   , 32|0    , 4|0   )|0;
+		opts['failLimit']     = rangeHasOwn(newOpts, opts,
+			'failLimit'    , 1|0   , 1000|0  , 4|0   )|0;
 		[
 			'radius',
 			'lineWidth',
@@ -86,13 +89,31 @@
 				opts[e] = newOpts[e]
 			}
 		});
+		if(cache['poly']){
+			for(var i in cache['poly']){
+				if(hasOwn(cache['poly'], i)){
+					for(var j in cache['poly'][i]){
+						if(hasOwn(cache['poly'][i],j)){
+							cache['poly'][i][j]['options'](opts);
+						}
+					}
+				}
+			}
+		}
 	}
 	mapgen.prototype['draw'] = mapgen.prototype.draw = function(force){
 		var
-			opts   = this.opts,
-			render = document.createElement('canvas'),
-			randomCache = {}
+			opts        = this.opts,
+			cache       = this.cache,
+			render      = document.createElement('canvas'),
+			randomCache = {},
+			polyCache   = (cache['poly'] = cache['poly'] || {})
 		;
+		if(force){
+			randomCache = {};
+			polyCache = {};
+			cache.blocks = undefined;
+		}
 		render.width = opts['renderWidth'];
 		render.height = opts['renderHeight'];
 		function randomDraw(){
@@ -107,6 +128,11 @@
 			}
 			if(!hasOwn(randomCache[width][height])){
 				randomCache[width][height] = new mapgen.roundedCornerPoly({
+					width     : width,
+					height    : height
+				});
+			}
+			randomCache[width][height]['options']({
 					radius    : opts['radius'],
 					lineWidth : opts['lineWidth'],
 					fillR     : opts['fillR'],
@@ -116,12 +142,9 @@
 					lineR     : opts['lineR'],
 					lineG     : opts['lineG'],
 					lineB     : opts['lineB'],
-					lineA     : opts['lineA'],
-					width     : width,
-					height    : height
-				});
-			}
-			return randomCache[width][height].draw();
+					lineA     : opts['lineA']
+			});
+			return randomCache[width][height];
 		}
 		var
 			ctx = render.getContext('2d'),
@@ -133,25 +156,54 @@
 			block
 		;
 		ctx.translate(opts['roadWidth'] / +2, opts['roadWidth'] / +2);
-		while(failCount < 4){
-			draw = randomDraw();
-			block = {
-				w : draw.width + opts['roadWidth'],
-				h : draw.height + opts['roadWidth']
-			};
-			packer.fit([block]);
-			while(block.fit){
-				failCount = 0;
-				ctx.drawImage(draw, block.fit.x, block.fit.y);
-				draw = randomDraw();
+		if(!cache.blocks){
+			var
+				blocks = []
+			;
+			while(failCount < opts['failLimit']){
+				var
+					random = randomDraw(),
+					draw   = random.draw()
+				;
 				block = {
 					w : draw.width + opts['roadWidth'],
 					h : draw.height + opts['roadWidth']
 				};
 				packer.fit([block]);
+				while(block.fit){
+					failCount = 0;
+					blocks.push({
+						x : block.fit.x,
+						y : block.fit.y,
+						width : draw.width,
+						height: draw.height
+					});
+					random = randomDraw();
+					draw   = random.draw(true);
+					if(!hasOwn(polyCache, draw.width)){
+						polyCache[draw.width] = {};
+					}
+					polyCache[draw.width][draw.height] = random;
+					block = {
+						w : draw.width + opts['roadWidth'],
+						h : draw.height + opts['roadWidth']
+					};
+					packer.fit([block]);
+				}
+				++failCount;
 			}
-			++failCount;
+			cache.blocks = blocks;
 		}
+		ctx.clearRect(0, 0, render.width, render.height);
+		cache.blocks.forEach(function(e){
+			var
+				draw = polyCache[e.width][e.height].draw(true)
+			;
+			ctx.drawImage(
+				draw,
+				e.x, e.y
+			);
+		});
 
 		return render;
 	}

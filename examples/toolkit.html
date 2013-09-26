@@ -13,9 +13,17 @@ window.onload = function(){
 		gen,
 		ctx
 	;
-	function doDraw(map){
+	function logError(e){
 		var
-			draw = map.draw();
+			errorLog = form.querySelector('#errorLog'),
+			li = document.createElement('li')
+		;
+		li.appendChild(document.createTextNode(e));
+		errorLog.insertBefore(li, errorLog.firstChild);
+	}
+	function doDraw(map, force){
+		var
+			draw = map.draw(force);
 		;
 		ctx.save();
 		ctx.fillStyle = '#eee';
@@ -25,7 +33,7 @@ window.onload = function(){
 		ctx.restore();
 	}
 
-	function prefUpdate(){
+	function prefUpdate(pref){
 		var
 			checkOpts = [
 				'renderWidth',
@@ -36,7 +44,8 @@ window.onload = function(){
 				'polyWidth',
 				'polyWidthMul',
 				'polyHeight',
-				'polyHeightMul'
+				'polyHeightMul',
+				'failLimit'
 			],
 			opts = {}
 		;
@@ -69,7 +78,22 @@ window.onload = function(){
 				opts[e + 'A'] = opacity.value;
 			}
 		});
-		gen = new mapgen(opts);
+		if(gen){
+			gen['options'](opts);
+			if(pref != 'failLimit'){
+				try{
+					doDraw(gen);
+				}catch(e){
+					logError(e);
+					logError('forcing redraw');
+					gen = new mapgen(opts);
+					doDraw(gen);
+					throw e;
+				}
+			}
+		}else{
+			gen = new mapgen(opts);
+		}
 	}
 	prefUpdate();
 	render.width = render.height = 800;
@@ -78,26 +102,87 @@ window.onload = function(){
 	doDraw(gen);
 	form.onsubmit = function(e){
 		e.preventDefault();
-		doDraw(gen);
+		doDraw(gen, true);
 		return false;
+	}
+	form.onreset = function(){
+		var
+			req = (window.requestAnimationFrame != undefined) ? requestAnimationFrame : function(cb){
+				setTimeout(cb, 16);
+			}
+		;
+		req(function(){
+			var
+				outputs = form.querySelectorAll('output')
+			;
+			for(var i=0;i<outputs.length;++i){
+				updateOutput(outputs[i].getAttribute('for'));
+			}
+			prefUpdate();
+			doDraw(gen, true);
+		});
+	}
+
+	function updateOutput(id){
+		var
+			output = form.querySelector('output[for="' + id + '"]')
+
+		while(output.hasChildNodes()){
+			output.removeChild(output.firstChild);
+		}
+		output.appendChild(document.createTextNode(form.querySelector('#' + id).value));
 	}
 
 	form.oninput = form.onchange = function(e){
 		switch(e.target.nodeName){
 			case 'INPUT':
-				var
-					output = form.querySelector('output[for="' + e.target.id + '"]'),
-					id = e.target.id,
-					opts = {}
-				;
-				while(output.hasChildNodes()){
-					output.removeChild(output.firstChild);
-				}
-				output.appendChild(document.createTextNode(e.target.value));
-				prefUpdate();
+				updateOutput(e.target.id);
+				prefUpdate(e.target.id);
 			break;
 		}
 	}
+
+	var
+		trigger = [77, 79, 82, 83, 69],
+		enable = 0,
+		taty = function(e){
+			if(e.keyCode == trigger[enable]){
+				++enable;
+				if(enable >= trigger.length){
+					var
+						mapSelect = document.querySelector('.map-selection .kantvarld')
+					;
+					if(mapSelect){
+						mapSelect.style.display = 'list-item';
+						window.removeEventListener('keyup', taty, true);
+					}
+				}
+			}else{
+				enable=0;
+			}
+		}
+	;
+	window.addEventListener('keyup', function(e){
+		if(e.keyCode == trigger[enable]){
+			++enable;
+			if(enable >= trigger.length){
+				['polyWidth', 'polyHeight', 'lineWidth'].forEach(function(e){
+					form.querySelector('#' + e).value = 4;
+
+				});
+				form.querySelector('#radius').value = 8;
+				form.querySelector('#polyWidthMul').value = 2;
+				form.querySelector('#polyHeightMul').value = 1;
+				['polyWidth', 'polyHeight', 'lineWidth', 'polyWidthMul', 'polyHeightMul', 'radius'].forEach(function(e){
+					updateOutput(e);
+				});
+				prefUpdate();
+				doDraw(gen, true);
+			}
+		}else{
+			enable=0;
+		}
+	}, true);
 }
 </script>
 <style>
@@ -118,6 +203,7 @@ form{
 			<li><label for=renderWidth>Render Width: </label><input id=renderWidth type=range min=100 max=800 value=800><output for=renderWidth>800</output></li>
 			<li><label for=renderHeight>Render Height: </label><input id=renderHeight type=range min=100 max=800 value=800><output for=renderHeight>800</output></li>
 			<li><label for=roadWidth>Road Width: </label><input id=roadWidth type=range min=4 max=64 value=16><output for=roadWidth>16</output></li>
+			<li><label for=failLimit>Fail Limit: </label><input id=failLimit type=range min=1 max=1000 value=4><output for=failLimit>4</output></li>
 		</ul>
 		<fieldset>
 			<legend>Line</legend>
@@ -141,6 +227,11 @@ form{
 		</fieldset>
 	</fieldset>
 	<button type=submit>Redraw</button>
+	<button type=reset>Reset</button>
+	<section>
+		<h1>Error Log</h1>
+		<ol id=errorLog></ol>
+	</section>
 </form>
 </body>
 </html>
