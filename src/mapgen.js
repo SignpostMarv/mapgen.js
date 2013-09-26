@@ -128,7 +128,7 @@
 			draw,
 			found,
 			i = 0,
-			packer = new Packer(render.width + (opts['polyWidth'] * opts['polyWidthMul']), render.height + (opts['polyHeight'] * opts['polyHeightMul'])),
+			packer = new Packer(render.width, render.height),
 			failCount = 0,
 			block
 		;
