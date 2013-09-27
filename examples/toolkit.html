@@ -4,7 +4,8 @@
 <title>mapgen.js toolkit</title>
 <meta charset="UTF-8" />
 <script src="../src/mapgen.js" defer></script>
-<script src="../lib/bin-packing/js/packer.js"></script>
+<script src="../lib/bin-packing/js/packer.js" defer></script>
+<script src="../lib/keySequenceTrigger/keySequenceTrigger.js" defer></script>
 <script defer>
 window.onload = function(){
 	var
@@ -246,47 +247,20 @@ window.onload = function(){
 		form.querySelector('#save').disabled = true;
 	}
 
-	var
-		trigger = [77, 79, 82, 83, 69],
-		enable = 0,
-		taty = function(e){
-			if(e.keyCode == trigger[enable]){
-				++enable;
-				if(enable >= trigger.length){
-					var
-						mapSelect = document.querySelector('.map-selection .kantvarld')
-					;
-					if(mapSelect){
-						mapSelect.style.display = 'list-item';
-						window.removeEventListener('keyup', taty, true);
-					}
-				}
-			}else{
-				enable=0;
-			}
-		}
-	;
-	window.addEventListener('keyup', function(e){
-		if(e.keyCode == trigger[enable]){
-			++enable;
-			if(enable >= trigger.length){
-				['polyWidth', 'polyHeight', 'lineWidth'].forEach(function(e){
-					form.querySelector('#' + e).value = 4;
+	keySequenceTrigger('morse', function(){
+		['polyWidth', 'polyHeight', 'lineWidth'].forEach(function(e){
+			form.querySelector('#' + e).value = 4;
 
-				});
-				form.querySelector('#radius').value = 8;
-				form.querySelector('#polyWidthMul').value = 2;
-				form.querySelector('#polyHeightMul').value = 1;
-				['polyWidth', 'polyHeight', 'lineWidth', 'polyWidthMul', 'polyHeightMul', 'radius'].forEach(function(e){
-					updateOutput(e);
-				});
-				prefUpdate();
-				doDraw(gen, true);
-			}
-		}else{
-			enable=0;
-		}
-	}, true);
+		});
+		form.querySelector('#radius').value = 8;
+		form.querySelector('#polyWidthMul').value = 2;
+		form.querySelector('#polyHeightMul').value = 1;
+		['polyWidth', 'polyHeight', 'lineWidth', 'polyWidthMul', 'polyHeightMul', 'radius'].forEach(function(e){
+			updateOutput(e);
+		});
+		prefUpdate();
+		doDraw(gen, true);
+	});
 }
 </script>
 <style>
