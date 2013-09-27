@@ -1,0 +1,3 @@
+[submodule "lib/keySequenceTrigger"]
+	path = lib/keySequenceTrigger
+	url = https://gist.github.com/6730726.git
